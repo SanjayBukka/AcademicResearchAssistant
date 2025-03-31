@@ -1,9 +1,9 @@
 import streamlit as st
 from features.references.reference_finder import run_references
 from features.writing.writing_assistant import run_writing
-from features.chatbot.paper_chatbot import run_chatbot
+from features.summarizer.paper_summarizer import run_paper_summarizer
 from features.gap_finder.gap_finder import run_gap_finder
-from features.trend_spotter.trend_spotter import run_trend_spotter
+from features.question.trend_spotter import run_research_assistant
 
 # App-wide configuration
 st.set_page_config(
@@ -57,13 +57,13 @@ if st.sidebar.button("🔍 Finding References"):
 if st.sidebar.button("✍️ Writing Guidance"):
     st.session_state.current_feature = "writing"
     
-if st.sidebar.button("💬 Paper Chatbot"):
-    st.session_state.current_feature = "chatbot"
+if st.sidebar.button("💬 Summarizer"):
+    st.session_state.current_feature = "summarizer"
     
 if st.sidebar.button("🕳️ Research Gap Finder"):
     st.session_state.current_feature = "gap_finder"
     
-if st.sidebar.button("📈 Research Trend Spotter"):
+if st.sidebar.button("📈 Clear Doughts"):
     st.session_state.current_feature = "trend_spotter"
 
 # Team information in sidebar
@@ -96,8 +96,8 @@ if st.session_state.current_feature == "home":
         st.markdown("</div>", unsafe_allow_html=True)
         
         st.markdown('<div class="feature-description">', unsafe_allow_html=True)
-        st.markdown("#### 💬 Paper Chatbot")
-        st.markdown("Have conversations about academic papers and get insights.")
+        st.markdown("#### 📃 Paper Summarizer")
+        st.markdown("Generate section-wise summaries of research papers from various sources.")
         st.markdown("</div>", unsafe_allow_html=True)
     
     with col2:
@@ -107,8 +107,8 @@ if st.session_state.current_feature == "home":
         st.markdown("</div>", unsafe_allow_html=True)
         
         st.markdown('<div class="feature-description">', unsafe_allow_html=True)
-        st.markdown("#### 📈 Research Trend Spotter")
-        st.markdown("Stay updated with emerging trends in your research area.")
+        st.markdown("#### 📈 Clear Doughts")
+        st.markdown("Get your doughts clear by asking questions.")
         st.markdown("</div>", unsafe_allow_html=True)
 
 # Feature pages
@@ -126,12 +126,13 @@ elif st.session_state.current_feature == "writing":
     st.markdown("</div>", unsafe_allow_html=True)
     run_writing()
 
-elif st.session_state.current_feature == "chatbot":
-    st.markdown('<div class="main-header">Paper Chatbot</div>', unsafe_allow_html=True)
+# Add the new Paper Summarizer feature
+elif st.session_state.current_feature == "summarizer":
+    st.markdown('<div class="main-header">Paper Summarizer</div>', unsafe_allow_html=True)
     st.markdown('<div class="feature-description">', unsafe_allow_html=True)
-    st.markdown("Have interactive conversations about academic papers to better understand complex concepts. Upload a paper or provide its details, and the chatbot will help you analyze and discuss its content.")
+    st.markdown("Generate section-wise summaries of research papers from arXiv, Semantic Scholar, Crossref, or upload your own PDFs. This tool breaks down papers into their component sections and provides concise summaries of each, making it easier to understand complex research quickly.")
     st.markdown("</div>", unsafe_allow_html=True)
-    run_chatbot()
+    run_paper_summarizer()
 
 elif st.session_state.current_feature == "gap_finder":
     st.markdown('<div class="main-header">Research Gap Finder</div>', unsafe_allow_html=True)
@@ -141,11 +142,11 @@ elif st.session_state.current_feature == "gap_finder":
     run_gap_finder()
 
 elif st.session_state.current_feature == "trend_spotter":
-    st.markdown('<div class="main-header">Research Trend Spotter</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">Clear Doughts</div>', unsafe_allow_html=True)
     st.markdown('<div class="feature-description">', unsafe_allow_html=True)
     st.markdown("Stay updated with the latest trends and emerging topics in your research area. This tool helps you identify hot topics, growing research directions, and recent developments to keep your work relevant and cutting-edge.")
     st.markdown("</div>", unsafe_allow_html=True)
-    run_trend_spotter()
+    run_research_assistant()
 
 # Footer
 st.markdown("---")

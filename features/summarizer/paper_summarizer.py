@@ -1,5 +1,3 @@
-# features/summarizer/paper_summarizer.py
-
 import streamlit as st
 import requests
 import json
@@ -9,6 +7,7 @@ from bs4 import BeautifulSoup
 import PyPDF2
 import io
 from datetime import datetime
+import numpy as np
 
 class PaperSource:
     def search(self, query, limit=5):
@@ -94,6 +93,7 @@ class SemanticScholarSource(PaperSource):
     
     def get_paper(self, paper_id):
         # For Semantic Scholar, we'll try to get the PDF if available
+        # Otherwise, we'll return None and let the app handle it
         paper_url = f"https://api.semanticscholar.org/graph/v1/paper/{paper_id}?fields=openAccessPdf"
         response = requests.get(paper_url)
         
@@ -159,6 +159,7 @@ class CrossrefSource(PaperSource):
     
     def get_paper(self, paper_id):
         # For Crossref, we'll try to resolve the DOI and get the PDF
+        # This is a simplified approach and may not work for all publishers
         doi_url = f"https://doi.org/{paper_id}"
         headers = {
             'Accept': 'application/pdf'
@@ -175,48 +176,74 @@ class CrossrefSource(PaperSource):
 
 class PaperSummarizer:
     def __init__(self):
+        # Initialize with a smaller model that's more stable for section summarization
         self.summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
     
     def extract_sections(self, text):
-        # This is a simplified section extraction
-        # Common section headers in research papers
+        # Improved section extraction with better pattern matching
         section_patterns = [
-            r'(?:\n|\r\n)(\d+\.\s+\w+.*?)(?=\n|\r\n)',  # Numbered sections like "1. Introduction"
-            r'(?:\n|\r\n)([A-Z][A-Z\s]+)(?=\n|\r\n)',  # ALL CAPS sections
-            r'(?:\n|\r\n)(\w+\s*\w+)(?=\n|\r\n)',  # Regular sections
+            r'(?:\n|\r\n|^)(\d+\.\s*\w[\w\s]*?)(?=\n|\r\n)',  # Numbered sections like "1. Introduction"
+            r'(?:\n|\r\n|^)([A-Z][A-Z\s]+)(?=\n|\r\n)',       # ALL CAPS sections
+            r'(?:\n|\r\n|^)(Abstract|Introduction|Related Work|Background|Methodology|Experiments|Results|Discussion|Conclusion|References)(?=\n|\r\n)',  # Common section names
         ]
         
         # First, try to find section headers
         section_headers = []
+        section_positions = []
+        
         for pattern in section_patterns:
-            headers = re.findall(pattern, text)
-            section_headers.extend(headers)
+            for match in re.finditer(pattern, text):
+                header = match.group(1).strip()
+                if header and len(header) < 100:  # Avoid matching entire paragraphs
+                    section_headers.append(header)
+                    section_positions.append(match.start())
+        
+        # Sort sections by their position in the text
+        if section_headers and section_positions:
+            sorted_sections = sorted(zip(section_headers, section_positions), key=lambda x: x[1])
+            section_headers = [s[0] for s in sorted_sections]
+            section_positions = [s[1] for s in sorted_sections]
         
         # If no headers found, chunk the text by paragraphs
         if not section_headers:
             paragraphs = re.split(r'\n\s*\n', text)
             sections = []
             
+            current_chunk = ""
+            chunk_count = 0
             for i, para in enumerate(paragraphs):
-                if i == 0:
-                    sections.append(("Abstract", para))
-                elif i == len(paragraphs) - 1:
-                    sections.append(("Conclusion", para))
-                else:
-                    sections.append((f"Section {i}", para))
+                current_chunk += para + "\n\n"
+                
+                # Create manageable chunks of text
+                if len(current_chunk) > 1000 or i == len(paragraphs) - 1:
+                    if chunk_count == 0:
+                        sections.append(("Introduction", current_chunk))
+                    elif i == len(paragraphs) - 1:
+                        sections.append(("Conclusion", current_chunk))
+                    else:
+                        sections.append((f"Section {chunk_count+1}", current_chunk))
+                    current_chunk = ""
+                    chunk_count += 1
             
             return sections
         
-        # If headers found, split the text by those headers
+        # If headers found, extract text between headers
         sections = []
         for i, header in enumerate(section_headers):
             if i < len(section_headers) - 1:
-                next_header = section_headers[i + 1]
-                section_text = text.split(header)[1].split(next_header)[0]
+                next_pos = section_positions[i + 1]
+                section_text = text[section_positions[i]:next_pos]
             else:
-                section_text = text.split(header)[1]
+                section_text = text[section_positions[i]:]
             
-            sections.append((header, section_text))
+            # Extract actual content (remove the header from the content)
+            header_end = section_text.find('\n')
+            if header_end != -1:
+                content = section_text[header_end:].strip()
+            else:
+                content = section_text.strip()
+            
+            sections.append((header, content))
         
         return sections
     
@@ -234,31 +261,89 @@ class PaperSummarizer:
             text = ' '.join(text.split()[:max_input_length])
         
         try:
-            summary = self.summarizer(text, max_length=max_length, min_length=30, do_sample=False)[0]['summary_text']
-            return summary
+            # Handle the summarization more safely with better error handling
+            chunks = [text[i:i+512] for i in range(0, len(text), 512)]
+            summaries = []
+            
+            for chunk in chunks[:3]:  # Limit to first 3 chunks to avoid excessive processing
+                if len(chunk.split()) < 20:
+                    continue
+                    
+                try:
+                    summary = self.summarizer(chunk, max_length=max_length//len(chunks[:3]), 
+                                            min_length=30, do_sample=False)[0]['summary_text']
+                    summaries.append(summary)
+                except Exception as e:
+                    st.warning(f"Error summarizing chunk: {str(e)}")
+                    # Fall back to extractive summarization when generative fails
+                    sentences = chunk.split('. ')
+                    if len(sentences) > 3:
+                        summaries.append('. '.join(sentences[:3]) + '.')
+            
+            if summaries:
+                return ' '.join(summaries)
+            else:
+                # Fallback to simple extractive summarization
+                sentences = text.split('. ')
+                return '. '.join(sentences[:3]) + '.'
+                
         except Exception as e:
-            return f"Error summarizing section: {str(e)}"
+            # Emergency fallback - just return the first few sentences
+            sentences = text.split('. ')
+            if sentences:
+                return '. '.join(sentences[:3]) + '.'
+            return f"Could not summarize section: {str(e)}"
     
     def summarize_paper(self, pdf_content):
-        # Extract text from PDF
-        pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_content))
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text() or ""
+        # Extract text from PDF with better error handling
+        try:
+            pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_content))
+            text = ""
+            for page in pdf_reader.pages:
+                try:
+                    extracted = page.extract_text()
+                    if extracted:
+                        text += extracted + "\n\n"
+                except Exception as e:
+                    st.warning(f"Error extracting text from page: {str(e)}")
+            
+            if not text:
+                st.error("Could not extract text from the PDF")
+                return [("Error", "Failed to extract text from the PDF.")]
+        except Exception as e:
+            st.error(f"Error processing PDF: {str(e)}")
+            return [("Error", f"Failed to process the PDF: {str(e)}")]
         
-        # Extract sections
-        sections = self.extract_sections(text)
+        # Extract sections with error handling
+        try:
+            sections = self.extract_sections(text)
+        except Exception as e:
+            st.error(f"Error extracting sections: {str(e)}")
+            # Fallback to simple paragraphs
+            paragraphs = text.split('\n\n')
+            sections = [(f"Section {i+1}", p) for i, p in enumerate(paragraphs) if len(p.strip()) > 100]
+            if not sections:
+                return [("Error", "Failed to identify sections in the paper.")]
         
-        # Summarize each section
+        # Summarize each section with proper error handling
         summaries = []
         for section_title, section_text in sections:
-            summary = self.summarize_section(section_text)
-            summaries.append((section_title, summary))
+            try:
+                summary = self.summarize_section(section_text)
+                summaries.append((section_title, summary))
+            except Exception as e:
+                # Provide a graceful fallback for failed summaries
+                st.warning(f"Error summarizing section '{section_title}': {str(e)}")
+                first_sentences = '. '.join(section_text.split('. ')[:3])
+                if first_sentences:
+                    summaries.append((section_title, first_sentences + '...'))
+                else:
+                    summaries.append((section_title, "Summary unavailable."))
         
         return summaries
 
-def run_paper_summarizer():
-    st.subheader("📃 Section-wise Paper Summarization")
+def run_summarization_tool():
+    st.title("📚 Research Paper Summarizer")
     
     # Initialize session state
     if "paper_summaries" not in st.session_state:
@@ -272,49 +357,59 @@ def run_paper_summarizer():
     }
     
     # Search interface
+    st.subheader("Search for papers")
+    
     col1, col2 = st.columns([3, 1])
     with col1:
-        search_query = st.text_input("Enter research topic or keywords", placeholder="e.g., natural language processing deep learning")
+        search_query = st.text_input("Enter search terms", placeholder="e.g., solar panel tracking system")
     
     with col2:
         source_name = st.selectbox("Source", list(sources.keys()))
     
-    if st.button("Find Papers"):
-        if search_query:
-            with st.spinner(f"Searching {source_name} for papers..."):
-                try:
-                    results = sources[source_name].search(search_query)
+    # Option to upload a PDF directly
+    st.subheader("Or upload a PDF directly")
+    uploaded_file = st.file_uploader("Upload a research paper", type="pdf")
+    
+    if st.button("Search") and search_query:
+        with st.spinner(f"Searching {source_name}..."):
+            try:
+                results = sources[source_name].search(search_query)
+                if results:
                     st.session_state.search_results = results
                     st.session_state.current_source = source_name
-                except Exception as e:
-                    st.error(f"Error searching {source_name}: {str(e)}")
+                else:
+                    st.warning(f"No results found for '{search_query}' in {source_name}.")
                     st.session_state.search_results = []
+            except Exception as e:
+                st.error(f"Error searching {source_name}: {str(e)}")
+                st.session_state.search_results = []
     
-    # Alternative: Upload a PDF directly
-    uploaded_file = st.file_uploader("Or upload a PDF paper directly", type="pdf")
-    if uploaded_file is not None:
-        with st.spinner("Processing uploaded paper..."):
-            pdf_content = uploaded_file.read()
+    # Process uploaded PDF
+    if uploaded_file:
+        with st.spinner("Processing your uploaded PDF..."):
             try:
+                pdf_content = uploaded_file.getvalue()
                 summarizer = PaperSummarizer()
                 summaries = summarizer.summarize_paper(pdf_content)
-                paper_id = "uploaded_" + datetime.now().strftime("%Y%m%d%H%M%S")
+                
+                paper_id = f"uploaded_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                 paper = {
                     'id': paper_id,
                     'title': uploaded_file.name,
-                    'abstract': '',
                     'authors': ['Unknown'],
                     'published': 'Unknown',
-                    'source': 'uploaded',
+                    'source': 'upload',
+                    'abstract': '',
                     'url': ''
                 }
+                
                 st.session_state.paper_summaries[paper_id] = {
                     'paper': paper,
                     'summaries': summaries
                 }
                 st.success("Paper summarized successfully!")
             except Exception as e:
-                st.error(f"Error summarizing uploaded paper: {str(e)}")
+                st.error(f"Error processing uploaded PDF: {str(e)}")
     
     # Display search results
     if hasattr(st.session_state, 'search_results') and st.session_state.search_results:
@@ -325,8 +420,10 @@ def run_paper_summarizer():
                 st.write(f"**Published:** {paper['published']}")
                 if paper['abstract']:
                     st.write(f"**Abstract:** {paper['abstract'][:300]}...")
+                else:
+                    st.write("**Abstract:** Not available")
                 
-                if st.button("Generate Section Summaries", key=f"summarize_{i}"):
+                if st.button("Summarize This Paper", key=f"summarize_{i}"):
                     source = sources[st.session_state.current_source]
                     paper_id = paper['id']
                     
@@ -334,8 +431,8 @@ def run_paper_summarizer():
                         pdf_content = source.get_paper(paper_id)
                         
                         if pdf_content:
-                            summarizer = PaperSummarizer()
                             try:
+                                summarizer = PaperSummarizer()
                                 summaries = summarizer.summarize_paper(pdf_content)
                                 st.session_state.paper_summaries[paper_id] = {
                                     'paper': paper,
@@ -349,7 +446,7 @@ def run_paper_summarizer():
     
     # Display summaries
     if st.session_state.paper_summaries:
-        st.subheader("Section Summaries")
+        st.subheader("Paper Summaries")
         for paper_id, data in st.session_state.paper_summaries.items():
             paper = data['paper']
             summaries = data['summaries']
@@ -359,7 +456,6 @@ def run_paper_summarizer():
                     st.markdown(f"### {section_title}")
                     st.write(summary)
                 
-                # Save to library button
                 if st.button("Save to My Library", key=f"save_{paper_id}"):
                     if "my_library" not in st.session_state:
                         st.session_state.my_library = []
@@ -372,27 +468,23 @@ def run_paper_summarizer():
                     })
                     st.success("Added to your library!")
     
-    # My Library tab
-    if st.checkbox("Show My Library", value=False):
+    # My Library
+    if "my_library" in st.session_state and st.session_state.my_library:
         st.subheader("My Library")
-        if "my_library" in st.session_state and st.session_state.my_library:
-            for i, item in enumerate(st.session_state.my_library):
-                paper = item['paper']
-                with st.expander(f"{paper['title']}"):
-                    st.write(f"**Authors:** {', '.join(paper['authors'])}")
-                    st.write(f"**Added on:** {item['added_on']}")
-                    st.write(f"**Source:** {paper['source']}")
-                    
+        for i, item in enumerate(st.session_state.my_library):
+            paper = item['paper']
+            with st.expander(f"{paper['title']}"):
+                st.write(f"**Authors:** {', '.join(paper['authors'])}")
+                st.write(f"**Added on:** {item['added_on']}")
+                st.write(f"**Source:** {paper['source']}")
+                
+                if st.button("View Summary", key=f"view_{i}"):
                     st.markdown("### Section Summaries")
                     for section_title, summary in item['summaries']:
                         st.markdown(f"#### {section_title}")
                         st.write(summary)
-                    
-                    if st.button("Remove from Library", key=f"remove_{i}"):
-                        st.session_state.my_library.pop(i)
-                        st.experimental_rerun()
-        else:
-            st.info("Your library is empty. Save summaries to view them here.")
+                
+                if st.button("Remove from Library", key=f"remove_{i}"):
+                    st.session_state.my_library.pop(i)
+                    st.experimental_rerun()
 
-if __name__ == "__main__":
-    run_paper_summarizer()

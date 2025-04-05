@@ -1,8 +1,8 @@
 import streamlit as st
 from features.references.reference_finder import run_references
 from features.writing.writing_assistant import run_writing
-from features.summarizer.paper_summarizer import run_paper_summarizer
-from features.gap_finder.gap_finder import run_gap_finder
+from features.summarizer.paper_summarizer import run_summarization_tool
+from features.gap_finder.gap_finder import create_gap_finder_app
 from features.question.trend_spotter import run_research_assistant
 
 # App-wide configuration
@@ -63,11 +63,13 @@ if st.sidebar.button("💬 Summarizer"):
 if st.sidebar.button("🕳️ Research Gap Finder"):
     st.session_state.current_feature = "gap_finder"
     
-if st.sidebar.button("📈 Clear Doughts"):
+if st.sidebar.button("📈 Clear Doubts"):
     st.session_state.current_feature = "trend_spotter"
 
 # Team information in sidebar
 st.sidebar.markdown("---")
+st.sidebar.markdown("### Mentor")
+st.sidebar.markdown("Dr.Ajin R Nair ")
 st.sidebar.markdown("### Team Members")
 st.sidebar.markdown("Sharan • Vatsav • Gayathri • Sanjay ")
 st.sidebar.markdown("Semester 6 Applicative Project")
@@ -126,20 +128,19 @@ elif st.session_state.current_feature == "writing":
     st.markdown("</div>", unsafe_allow_html=True)
     run_writing()
 
-# Add the new Paper Summarizer feature
 elif st.session_state.current_feature == "summarizer":
     st.markdown('<div class="main-header">Paper Summarizer</div>', unsafe_allow_html=True)
     st.markdown('<div class="feature-description">', unsafe_allow_html=True)
     st.markdown("Generate section-wise summaries of research papers from arXiv, Semantic Scholar, Crossref, or upload your own PDFs. This tool breaks down papers into their component sections and provides concise summaries of each, making it easier to understand complex research quickly.")
     st.markdown("</div>", unsafe_allow_html=True)
-    run_paper_summarizer()
+    run_summarization_tool()
 
 elif st.session_state.current_feature == "gap_finder":
     st.markdown('<div class="main-header">Research Gap Finder</div>', unsafe_allow_html=True)
     st.markdown('<div class="feature-description">', unsafe_allow_html=True)
     st.markdown("Discover unexplored areas in your field of research. This tool analyzes existing literature to identify potential research gaps that could be addressed in your work, helping you find novel research directions.")
     st.markdown("</div>", unsafe_allow_html=True)
-    run_gap_finder()
+    create_gap_finder_app()
 
 elif st.session_state.current_feature == "trend_spotter":
     st.markdown('<div class="main-header">Clear Doughts</div>', unsafe_allow_html=True)

@@ -2,7 +2,7 @@ import streamlit as st
 from features.references.reference_finder import run_references
 from features.writing.writing_assistant import run_writing
 from features.summarizer.paper_summarizer import run_summarization_tool
-from features.gap_finder.gap_finder import create_gap_finder_app
+from features.gap_finder.gap_finder import run_gap_finder
 from features.question.trend_spotter import run_research_assistant
 
 # App-wide configuration
@@ -140,7 +140,7 @@ elif st.session_state.current_feature == "gap_finder":
     st.markdown('<div class="feature-description">', unsafe_allow_html=True)
     st.markdown("Discover unexplored areas in your field of research. This tool analyzes existing literature to identify potential research gaps that could be addressed in your work, helping you find novel research directions.")
     st.markdown("</div>", unsafe_allow_html=True)
-    create_gap_finder_app()
+    run_gap_finder()
 
 elif st.session_state.current_feature == "trend_spotter":
     st.markdown('<div class="main-header">Clear Doughts</div>', unsafe_allow_html=True)

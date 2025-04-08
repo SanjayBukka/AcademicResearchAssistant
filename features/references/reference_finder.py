@@ -109,9 +109,9 @@ class ResearchPaperSearchAssistant:
                     'year': year,
                     'url': url,
                     'platform': 'arXiv',
-                    'citation_count': 0,  # arXiv doesn't provide citation count
+                    'citation_count': 1,  
                     'venue': 'arXiv',
-                    'reference_count': 0  # arXiv doesn't provide reference count
+                    'reference_count': 1
                 })
             
             return processed_papers
@@ -215,7 +215,7 @@ class ResearchPaperSearchAssistant:
             outputs = self.model(**inputs)
             embeddings = outputs.last_hidden_state.mean(dim=1)
         
-        return embeddings.cpu().numpy()[0]  # Return as numpy array
+        return embeddings.cpu().numpy()[0]  
 
     def prepare_recommendation_system(self, papers_data):
         # Filter papers that have abstracts
@@ -298,8 +298,8 @@ class ResearchPaperSearchAssistant:
 
     def calculate_impact_score(self, paper):
         """Calculate a paper's impact score based on citations, recency, and venue"""
-        citation_count = paper.get('citation_count', 0)
-        reference_count = paper.get('reference_count', 0)
+        citation_count = paper.get('citation_count', 1)
+        reference_count = paper.get('reference_count', 1)
         similarity = paper.get('similarity_score', 0)
         
         # Calculate recency factor (papers from last 5 years get a boost)

@@ -8,6 +8,7 @@ import PyPDF2
 import io
 from datetime import datetime
 import numpy as np
+from rouge_score import rouge_scorer
 
 class PaperSource:
     def search(self, query, limit=5):
@@ -178,6 +179,8 @@ class PaperSummarizer:
     def __init__(self):
         # Initialize with a smaller model that's more stable for section summarization
         self.summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+        # Initialize ROUGE scorer
+        self.rouge_scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
     
     def extract_sections(self, text):
         # Improved section extraction with better pattern matching
@@ -294,6 +297,15 @@ class PaperSummarizer:
                 return '. '.join(sentences[:3]) + '.'
             return f"Could not summarize section: {str(e)}"
     
+    def calculate_rouge_scores(self, summary, reference):
+        """Calculate ROUGE scores between summary and reference text"""
+        scores = self.rouge_scorer.score(reference, summary)
+        return {
+            'rouge1': scores['rouge1'].fmeasure,
+            'rouge2': scores['rouge2'].fmeasure,
+            'rougeL': scores['rougeL'].fmeasure
+        }
+    
     def summarize_paper(self, pdf_content):
         # Extract text from PDF with better error handling
         try:
@@ -330,15 +342,19 @@ class PaperSummarizer:
         for section_title, section_text in sections:
             try:
                 summary = self.summarize_section(section_text)
-                summaries.append((section_title, summary))
+                
+                # Calculate ROUGE scores comparing summary to original text
+                rouge_scores = self.calculate_rouge_scores(summary, section_text)
+                
+                summaries.append((section_title, summary, rouge_scores, section_text))
             except Exception as e:
                 # Provide a graceful fallback for failed summaries
                 st.warning(f"Error summarizing section '{section_title}': {str(e)}")
                 first_sentences = '. '.join(section_text.split('. ')[:3])
                 if first_sentences:
-                    summaries.append((section_title, first_sentences + '...'))
+                    summaries.append((section_title, first_sentences + '...', None, section_text))
                 else:
-                    summaries.append((section_title, "Summary unavailable."))
+                    summaries.append((section_title, "Summary unavailable.", None, section_text))
         
         return summaries
 
@@ -452,9 +468,33 @@ def run_summarization_tool():
             summaries = data['summaries']
             
             with st.expander(f"Summary of: {paper['title']}"):
-                for section_title, summary in summaries:
+                for item in summaries:
+                    section_title = item[0]
+                    summary = item[1]
+                    rouge_scores = item[2] if len(item) > 2 else None
+                    
                     st.markdown(f"### {section_title}")
                     st.write(summary)
+                    
+                    # Display ROUGE scores if available - NO NESTED EXPANDERS
+                    if rouge_scores:
+                        st.markdown("##### Quality Metrics (ROUGE Scores)")
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("ROUGE-1", f"{rouge_scores['rouge1']:.2f}")
+                        with col2:
+                            st.metric("ROUGE-2", f"{rouge_scores['rouge2']:.2f}")
+                        with col3:
+                            st.metric("ROUGE-L", f"{rouge_scores['rougeL']:.2f}")
+                        
+                        st.markdown("""
+                        **ROUGE Score Interpretation:**
+                        - **ROUGE-1**: Overlap of unigrams (single words)
+                        - **ROUGE-2**: Overlap of bigrams (word pairs)
+                        - **ROUGE-L**: Longest common subsequence
+                        
+                        Higher scores (closer to 1.0) indicate better summary quality compared to the source text.
+                        """)
                 
                 if st.button("Save to My Library", key=f"save_{paper_id}"):
                     if "my_library" not in st.session_state:
@@ -480,11 +520,25 @@ def run_summarization_tool():
                 
                 if st.button("View Summary", key=f"view_{i}"):
                     st.markdown("### Section Summaries")
-                    for section_title, summary in item['summaries']:
+                    for section_data in item['summaries']:
+                        section_title = section_data[0]
+                        summary = section_data[1]
+                        rouge_scores = section_data[2] if len(section_data) > 2 else None
+                        
                         st.markdown(f"#### {section_title}")
                         st.write(summary)
+                        
+                        # Display ROUGE scores if available - NO NESTED EXPANDERS
+                        if rouge_scores:
+                            st.markdown("##### Quality Metrics (ROUGE Scores)")
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("ROUGE-1", f"{rouge_scores['rouge1']:.2f}")
+                            with col2:
+                                st.metric("ROUGE-2", f"{rouge_scores['rouge2']:.2f}")
+                            with col3:
+                                st.metric("ROUGE-L", f"{rouge_scores['rougeL']:.2f}")
                 
                 if st.button("Remove from Library", key=f"remove_{i}"):
                     st.session_state.my_library.pop(i)
                     st.experimental_rerun()
-

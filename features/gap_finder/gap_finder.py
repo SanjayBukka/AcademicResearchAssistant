@@ -386,7 +386,7 @@ def generate_gap_ideas_with_mistral(paper, topic, opportunity_keywords):
     return response
 
 def run_gap_finder():
-    st.title("🕳️ Advanced Research Gap Finder")
+    st.title("🕳️ Research Gap Finder")
     st.write("Discover untapped research opportunities and emerging trends in your field")
     
     # Load SciBERT model

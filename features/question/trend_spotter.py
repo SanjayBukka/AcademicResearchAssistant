@@ -138,7 +138,7 @@ def evaluate_response(reference, candidate):
         return 0.0
 
 def run_research_assistant():
-    st.subheader("📚 Research Paper Assistant (Powered by Mistral + SciBERT)")
+    st.subheader("📚 Research Paper Assistant")
     st.write("Upload your research paper and ask questions about it.")
 
     uploaded_file = st.file_uploader("Upload a research paper (PDF)", type="pdf")

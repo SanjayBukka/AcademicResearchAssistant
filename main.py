@@ -99,7 +99,7 @@ if st.session_state.current_feature == "home":
         
         st.markdown('<div class="feature-description">', unsafe_allow_html=True)
         st.markdown("#### 📃 Paper Summarizer")
-        st.markdown("Generate section-wise summaries of research papers from various sources.")
+        st.markdown("Generate summaries of research papers from various sources.")
         st.markdown("</div>", unsafe_allow_html=True)
     
     with col2:

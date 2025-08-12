@@ -158,16 +158,26 @@ streamlit run main.py --server.runOnSave=true
 
 ## 🐛 Troubleshooting
 
-### Common Issues
-1. **API Key Error**: Ensure your Gemini API key is valid
-2. **Memory Issues**: Use fast performance mode for deployment
-3. **Port Issues**: Change port in streamlit command if 8502 is occupied
-4. **Model Download**: First run may take time to download models
+### Common Deployment Issues
+1. **PyTorch Version Error**: Use `requirements-minimal.txt` for faster deployment
+2. **Python Version Conflicts**: Try `requirements-streamlit.txt` for Streamlit Cloud
+3. **Installation Timeout**: Use minimal requirements first, add features gradually
+4. **API Key Error**: Ensure your Gemini API key is valid and set correctly
+
+### Quick Fixes
+```bash
+# For deployment issues, try minimal requirements:
+cp requirements-minimal.txt requirements.txt
+
+# For Streamlit Cloud specifically:
+cp requirements-streamlit.txt requirements.txt
+```
 
 ### Getting Help
-- Check application logs for detailed error messages
-- Ensure all dependencies are properly installed
-- Verify internet connectivity for API calls
+- Check `DEPLOYMENT_TROUBLESHOOTING.md` for detailed solutions
+- Review application logs for specific error messages
+- Test locally with the same Python version as deployment platform
+- Use minimal requirements for emergency deployment
 
 ## 📊 System Requirements
 

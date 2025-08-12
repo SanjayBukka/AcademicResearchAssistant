@@ -11,6 +11,49 @@ import time
 from datetime import datetime
 import json
 
+@st.cache_resource
+def load_scibert_model():
+    """Load and cache SciBERT model and tokenizer with fallback options."""
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # Try different model options in order of preference (fastest first)
+    model_options = [
+        {
+            'name': 'sentence-transformers/all-MiniLM-L6-v2',
+            'description': 'MiniLM (fast, ~90MB)',
+            'from_flax': False
+        },
+        {
+            'name': 'sentence-transformers/paraphrase-MiniLM-L6-v2',
+            'description': 'Paraphrase MiniLM (fast, ~90MB)',
+            'from_flax': False
+        },
+        {
+            'name': 'sentence-transformers/all-mpnet-base-v2',
+            'description': 'MPNet (balanced, ~420MB)',
+            'from_flax': False
+        }
+    ]
+
+    for option in model_options:
+        try:
+            with st.spinner(f"Loading {option['description']} model..."):
+                tokenizer = AutoTokenizer.from_pretrained(option['name'])
+                if option['from_flax']:
+                    model = AutoModel.from_pretrained(option['name'], from_flax=True).to(device)
+                else:
+                    model = AutoModel.from_pretrained(option['name']).to(device)
+
+                st.success(f"✅ Successfully loaded {option['description']} model")
+                return tokenizer, model, device
+
+        except Exception as e:
+            st.warning(f"⚠️ Failed to load {option['description']}: {str(e)}")
+            continue
+
+    # If all models fail, raise an error
+    raise Exception("Failed to load any embedding model. Please check your internet connection.")
+
 class ResearchPaperSearchAssistant:
     def __init__(self):
         self.platforms = {
@@ -18,13 +61,11 @@ class ResearchPaperSearchAssistant:
             "arXiv": self._search_arxiv,
             "CrossRef": self._search_crossref
         }
-        # Initialize SciBERT model and tokenizer
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.tokenizer = AutoTokenizer.from_pretrained('allenai/scibert_scivocab_uncased')
-        self.model = AutoModel.from_pretrained('allenai/scibert_scivocab_uncased').to(self.device)
+        # Use cached model
+        self.tokenizer, self.model, self.device = load_scibert_model()
         self.papers_df = None
         self.embeddings = None
-        
+
         # Evaluation metrics
         self.metrics = {
             'query_time': 0,

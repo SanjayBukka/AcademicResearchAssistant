@@ -109,9 +109,24 @@ def run_writing():
 
     # API Key input in sidebar
     with st.sidebar:
-        api_key = st.text_input("Enter Gemini API Key", type="password")
+        # Try to get API key from environment first
+        try:
+            import sys
+            import os
+            sys.path.append('..')
+            from env_loader import get_api_key
+            default_api_key = get_api_key()
+        except ImportError:
+            import os
+            default_api_key = os.getenv('GEMINI_API_KEY', '')
+
+        api_key = st.text_input("Enter Gemini API Key",
+                               type="password",
+                               value=default_api_key,
+                               help="Get your API key from https://makersuite.google.com/app/apikey")
         if not api_key:
             st.warning("Please enter your Gemini API key to continue")
+            st.info("💡 Tip: You can set the GEMINI_API_KEY environment variable to avoid entering it each time.")
             return
 
     # Configure Gemini and select model

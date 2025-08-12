@@ -13,12 +13,48 @@ from keybert import KeyBERT
 import torch
 from transformers import AutoTokenizer, AutoModel
 
-# Function to load SciBERT model
+# Function to load SciBERT model with better caching and fallback
 @st.cache_resource
 def load_scibert_model():
-    tokenizer = AutoTokenizer.from_pretrained('allenai/scibert_scivocab_uncased')
-    model = AutoModel.from_pretrained('allenai/scibert_scivocab_uncased')
-    return tokenizer, model
+    """Load and cache SciBERT model and tokenizer for gap analysis with fallback options."""
+
+    # Try different model options in order of preference (fastest first)
+    model_options = [
+        {
+            'name': 'sentence-transformers/all-MiniLM-L6-v2',
+            'description': 'MiniLM (fast, ~90MB)',
+            'from_flax': False
+        },
+        {
+            'name': 'sentence-transformers/paraphrase-MiniLM-L6-v2',
+            'description': 'Paraphrase MiniLM (fast, ~90MB)',
+            'from_flax': False
+        },
+        {
+            'name': 'sentence-transformers/all-mpnet-base-v2',
+            'description': 'MPNet (balanced, ~420MB)',
+            'from_flax': False
+        }
+    ]
+
+    for option in model_options:
+        try:
+            with st.spinner(f"Loading {option['description']} model (one-time download)..."):
+                tokenizer = AutoTokenizer.from_pretrained(option['name'])
+                if option['from_flax']:
+                    model = AutoModel.from_pretrained(option['name'], from_flax=True)
+                else:
+                    model = AutoModel.from_pretrained(option['name'])
+
+                st.success(f"✅ Successfully loaded {option['description']} model")
+                return tokenizer, model
+
+        except Exception as e:
+            st.warning(f"⚠️ Failed to load {option['description']}: {str(e)}")
+            continue
+
+    # If all models fail, raise an error
+    raise Exception("Failed to load any embedding model. Please check your internet connection.")
 
 # Function to get SciBERT embeddings
 def get_scibert_embeddings(texts, tokenizer, model):

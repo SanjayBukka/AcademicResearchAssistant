@@ -1,4 +1,12 @@
 import streamlit as st
+import os
+
+# Deployment-safe imports
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    GENAI_AVAILABLE = False
 import requests
 import json
 import re

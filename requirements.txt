@@ -1,3 +1,6 @@
+# STREAMLIT CLOUD OPTIMIZED REQUIREMENTS
+# Minimal dependencies for reliable deployment
+
 # Core web framework
 streamlit>=1.28.0
 
@@ -6,43 +9,21 @@ requests>=2.31.0
 pandas>=2.0.3
 numpy>=1.26.0
 
-# Machine learning and NLP (optimized for deployment)
-scikit-learn>=1.3.0
-sentence-transformers>=2.2.2
-transformers>=4.30.0
-torch>=2.0.0
+# Essential AI/ML (lightweight)
 google-generativeai>=0.3.2
+scikit-learn>=1.3.0
 
-# PDF processing
+# PDF processing (core feature)
 PyPDF2>=3.0.1
 
-# Vector storage for embeddings
-faiss-cpu>=1.7.4
-
-# Additional dependencies for text processing
+# Text processing
 beautifulsoup4>=4.13.4
-lxml>=6.0.0
-rouge-score>=0.1.2
-
-# Keyword extraction and text analysis
-keybert>=0.9.0
 
 # Data visualization
 plotly>=6.2.0
 
-# Natural language processing utilities
-nltk>=3.9.1
-
-# OCR capabilities (optional)
-pytesseract>=0.3.10
-pdf2image>=1.16.3
+# Image processing (lightweight)
 Pillow>=10.1.0
-
-# Additional dependencies for embeddings
-huggingface-hub>=0.17.3
 
 # Environment management
 python-dotenv>=1.0.0
-
-# Security and performance
-watchdog>=3.0.0

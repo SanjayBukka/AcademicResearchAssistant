@@ -25,7 +25,7 @@ def fix_requirements():
         print(f"  {status} {name}: {path}")
     
     print("\n🎯 Deployment strategies:")
-    print("1. Minimal (fastest, basic features)")
+    print("1. Minimal (fastest, basic features) - Recommended for langchain errors")
     print("2. Streamlit Cloud optimized")
     print("3. Keep current requirements")
     

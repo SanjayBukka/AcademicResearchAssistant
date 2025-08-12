@@ -5,19 +5,48 @@ import tempfile
 import PyPDF2
 import io
 import google.generativeai as genai
-from sentence_transformers import SentenceTransformer
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
-import pytesseract
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# Try to import optional dependencies with fallbacks
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+try:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_community.vectorstores import FAISS
+    LANGCHAIN_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_AVAILABLE = False
+
+try:
+    from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+    NLTK_AVAILABLE = True
+except ImportError:
+    NLTK_AVAILABLE = False
+
+try:
+    import pytesseract
+    PYTESSERACT_AVAILABLE = True
+except ImportError:
+    PYTESSERACT_AVAILABLE = False
+
+# Configure OCR if available
+if PYTESSERACT_AVAILABLE:
+    try:
+        # Try to set tesseract path for Windows
+        if os.name == 'nt':
+            pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    except:
+        pass
 
 OCR_AVAILABLE = False
 try:
-    import pytesseract
-    from PIL import Image
+    if PYTESSERACT_AVAILABLE:
+        import pytesseract
+        from PIL import Image
     from pdf2image import convert_from_path
     OCR_AVAILABLE = True
 except ImportError:
@@ -244,6 +273,19 @@ def evaluate_response(reference, candidate):
 def run_research_assistant():
     st.subheader("📚 Research Paper Assistant")
     st.write("Upload your research paper and ask questions about it.")
+
+    # Check for required dependencies
+    missing_deps = []
+    if not SENTENCE_TRANSFORMERS_AVAILABLE:
+        missing_deps.append("sentence-transformers")
+    if not LANGCHAIN_AVAILABLE:
+        missing_deps.append("langchain and langchain-community")
+
+    if missing_deps:
+        st.error(f"❌ Missing required dependencies: {', '.join(missing_deps)}")
+        st.info("💡 This feature requires additional packages. Please install them or use the minimal deployment version.")
+        st.code("pip install sentence-transformers langchain langchain-community")
+        return
 
     # Configuration in sidebar
     with st.sidebar:

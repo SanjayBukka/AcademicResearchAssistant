@@ -5,7 +5,20 @@ from features.references.reference_finder import run_references
 from features.writing.writing_assistant import run_writing
 from features.summarizer.paper_summarizer import run_summarization_tool
 from features.gap_finder.gap_finder import run_gap_finder
-from features.question.trend_spotter import run_research_assistant
+
+# Try to import Q&A assistant with fallback
+try:
+    from features.question.trend_spotter import run_research_assistant
+    QA_AVAILABLE = True
+except ImportError as e:
+    QA_AVAILABLE = False
+    QA_ERROR = str(e)
+    # Import simple fallback version
+    try:
+        from features.question.simple_qa import run_simple_qa
+        SIMPLE_QA_AVAILABLE = True
+    except ImportError:
+        SIMPLE_QA_AVAILABLE = False
 
 # Load environment variables
 try:
@@ -237,14 +250,14 @@ if "current_feature" not in st.session_state:
 # Enhanced Sidebar with modern navigation
 st.sidebar.markdown('<div class="sidebar-header">🎓 Research Tools</div>', unsafe_allow_html=True)
 
-# Navigation buttons with icons and descriptions
+# Navigation buttons with icons and descriptions (Streamlit Cloud optimized)
 nav_items = [
     {"key": "home", "icon": "🏠", "title": "Home", "desc": "Dashboard"},
     {"key": "references", "icon": "🔍", "title": "Find References", "desc": "Discover papers"},
     {"key": "writing", "icon": "✍️", "title": "Writing Guide", "desc": "AI assistance"},
     {"key": "summarizer", "icon": "�", "title": "Summarizer", "desc": "Paper summaries"},
-    {"key": "gap_finder", "icon": "🕳️", "title": "Gap Finder", "desc": "Research opportunities"},
-    {"key": "trend_spotter", "icon": "💬", "title": "Q&A Assistant", "desc": "Clear doubts"}
+    {"key": "trend_spotter", "icon": "💬", "title": "Q&A Assistant", "desc": "Ask questions"}
+    # Note: Gap Finder temporarily disabled for deployment stability
 ]
 
 for item in nav_items:
@@ -414,14 +427,32 @@ elif st.session_state.current_feature == "gap_finder":
     st.markdown('<div class="feature-description">', unsafe_allow_html=True)
     st.markdown("Discover unexplored areas in your field of research. This tool analyzes existing literature to identify potential research gaps that could be addressed in your work, helping you find novel research directions.")
     st.markdown("</div>", unsafe_allow_html=True)
-    run_gap_finder()
+
+    # Deployment-safe feature check
+    try:
+        run_gap_finder()
+    except ImportError as e:
+        st.error("❌ This feature requires additional dependencies not available in the current deployment.")
+        st.info("💡 Use the Writing Assistant or Reference Finder for research help!")
+        st.code(f"Missing: {str(e)}")
 
 elif st.session_state.current_feature == "trend_spotter":
-    st.markdown('<div class="main-header">Clear Doughts</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">Q&A Assistant</div>', unsafe_allow_html=True)
     st.markdown('<div class="feature-description">', unsafe_allow_html=True)
-    st.markdown("Stay updated with the latest trends and emerging topics in your research area. This tool helps you identify hot topics, growing research directions, and recent developments to keep your work relevant and cutting-edge.")
+    st.markdown("Upload research papers and ask questions about them. Get contextual answers powered by advanced AI to help clarify doubts and understand complex research content.")
     st.markdown("</div>", unsafe_allow_html=True)
-    run_research_assistant()
+
+    if QA_AVAILABLE:
+        run_research_assistant()
+    elif SIMPLE_QA_AVAILABLE:
+        st.info("💡 Using simplified Q&A version (some advanced features may be limited)")
+        run_simple_qa()
+    else:
+        st.error("❌ Q&A Assistant is not available")
+        st.info("💡 This feature requires additional dependencies that are not installed in the current deployment.")
+        st.markdown("**Missing dependencies:**")
+        st.code("langchain\nlangchain-community\nsentence-transformers")
+        st.markdown("**Alternative:** You can still use the Writing Assistant for help with your research questions!")
 
 # # Enhanced Footer
 # st.markdown("""

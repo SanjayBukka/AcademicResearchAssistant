@@ -6,7 +6,16 @@ Your Academic Research Assistant is now fully configured and ready for deploymen
 
 ## 🎯 **Quick Deployment Commands**
 
-### **Streamlit Cloud (Recommended)**
+### **Fix for LangChain Error (Recommended First)**
+```bash
+# Use minimal requirements to avoid dependency issues
+cp requirements-minimal.txt requirements.txt
+git add requirements.txt
+git commit -m "Fix langchain dependency error"
+git push
+```
+
+### **Streamlit Cloud (After fixing dependencies)**
 1. Push to GitHub: `git add . && git commit -m "Ready for deployment" && git push`
 2. Go to [share.streamlit.io](https://share.streamlit.io)
 3. Connect your repository

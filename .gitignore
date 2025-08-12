@@ -64,8 +64,8 @@ models/
 *.bin
 *.safetensors
 
-# Streamlit
-.streamlit/
+# Streamlit (keep config, ignore secrets)
+.streamlit/secrets.toml
 
 # Jupyter Notebook
 .ipynb_checkpoints

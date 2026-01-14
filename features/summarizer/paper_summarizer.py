@@ -549,4 +549,4 @@ def run_summarization_tool():
                 
                 if st.button("Remove from Library", key=f"remove_{i}"):
                     st.session_state.my_library.pop(i)
-                    st.experimental_rerun()
+                    st.rerun()

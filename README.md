@@ -1,212 +1,107 @@
 # 🎓 Academic Research Assistant
 
-A comprehensive AI-powered research tool that helps academics and researchers with paper discovery, writing assistance, summarization, and research gap analysis.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=Streamlit&logoColor=white)](https://streamlit.io/)
+[![Gemini AI](https://img.shields.io/badge/Gemini%20AI-4285F4?style=flat&logo=google&logoColor=white)](https://ai.google.dev/)
 
-## ✨ Features
+A comprehensive, AI-powered research ecosystem designed to empower academics and researchers. This tool streamlines the entire research lifecycle—from paper discovery and gap analysis to writing assistance and summarization.
 
-- **🔍 Smart Reference Finder**: Discover relevant papers from arXiv, Semantic Scholar, and CrossRef
-- **✍️ AI Writing Assistant**: Get intelligent guidance for academic writing with Gemini AI
-- **📄 Paper Summarizer**: Generate section-wise summaries of research papers
-- **🕳️ Research Gap Analyzer**: Identify unexplored research opportunities
-- **💬 Q&A Assistant**: Upload papers and ask questions with contextual answers
+## 🚀 Key Features
 
-## 🚀 Quick Start
+### 🔍 Smart Reference Finder
+*   **Semantic Search**: Uses **SciBERT** embeddings to find papers based on conceptual meaning, not just keywords.
+*   **Multi-Platform**: Aggregates results from **arXiv**, **Semantic Scholar**, and **CrossRef**.
+*   **Impact Scoring**: Calculates a custom "Impact Score" based on citations, recency, and venue prestige.
+
+### 🕳️ Research Gap Analyzer
+*   **Landscape Visualization**: Generates a 2D map of the research field using PCA-reduced embeddings.
+*   **Outlier Detection**: Identifies "research gaps" by finding papers that deviate from the field's center.
+*   **Keyword Opportunities**: Uses **KeyBERT** to find emerging trends and untapped research directions.
+
+### ✍️ AI Writing Assistant
+*   **Section-Wise Guidance**: Powered by **Gemini Pro**, providing tailored advice for Abstract, Introduction, Methodology, etc.
+*   **Real-time Feedback**: Analyzes your writing for academic tone, clarity, and structural integrity.
+*   **Export Ready**: Download your structured paper content in JSON format.
+
+### 📄 Paper Summarizer
+*   **Sectional Breakdown**: Automatically extracts and summarizes individual sections of a paper.
+*   **BART-Large-CNN**: Uses state-of-the-art transformer models for high-quality abstractive summarization.
+*   **Quality Metrics**: Evaluates summaries using **ROUGE** scores.
+
+### 💬 Q&A Assistant (RAG)
+*   **Contextual Intelligence**: Upload any PDF and ask complex questions.
+*   **RAG Architecture**: Uses **FAISS** vector storage and **LangChain** for precise information retrieval.
+*   **OCR Support**: Integrated **Tesseract** support for scanned PDFs and images.
+
+## 🛠️ Technical Architecture
+
+```mermaid
+graph TD
+    User((User)) --> Streamlit[Streamlit UI]
+    Streamlit --> RefFinder[Reference Finder]
+    Streamlit --> GapFinder[Gap Analyzer]
+    Streamlit --> Writing[Writing Assistant]
+    Streamlit --> QA[Q&A Assistant]
+    
+    RefFinder --> SciBERT[SciBERT Embeddings]
+    RefFinder --> APIs[arXiv/Semantic Scholar/CrossRef]
+    
+    GapFinder --> KeyBERT[KeyBERT Extraction]
+    GapFinder --> Plotly[Plotly Visualization]
+    
+    Writing --> Gemini[Gemini Pro API]
+    
+    QA --> FAISS[FAISS Vector Store]
+    QA --> LangChain[LangChain Orchestration]
+    
+    Summarizer --> BART[BART-Large-CNN]
+```
+
+## ⚙️ Installation & Setup
 
 ### Prerequisites
-- Python 3.7 or higher
-- Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
+*   Python 3.9 or higher
+*   Google Gemini API Key ([Get one here](https://aistudio.google.com/app/apikey))
+*   (Optional) Tesseract OCR for image processing
 
-### Option 1: Automated Setup (Recommended)
-```bash
-# Clone the repository
-git clone <repository-url>
-cd AcademicResearchAssistant
+### Quick Start
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/SanjayBukka/AcademicResearchAssistant.git
+    cd AcademicResearchAssistant
+    ```
 
-# Run the deployment script
-python deploy.py
-```
+2.  **Install dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-### Option 2: Manual Setup
-```bash
-# Clone the repository
-git clone <repository-url>
-cd AcademicResearchAssistant
+3.  **Set up environment**:
+    ```bash
+    cp .env.example .env
+    # Add your GEMINI_API_KEY to the .env file
+    ```
 
-# Create virtual environment
-python -m venv venv
+4.  **Run the app**:
+    ```bash
+    streamlit run main.py
+    ```
 
-# Activate virtual environment
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
+## 🌐 Deployment
 
-# Install dependencies
-pip install -r requirements.txt
+This project is optimized for **Streamlit Cloud**, **Docker**, and **Heroku**.
 
-# Setup environment
-cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
-
-# Run the application
-streamlit run main.py
-```
-
-## 🌐 Deployment Options
-
-### 1. Streamlit Cloud (Easiest)
-1. Fork this repository
-2. Go to [Streamlit Cloud](https://streamlit.io/cloud)
-3. Connect your GitHub repository
-4. Add your `GEMINI_API_KEY` in the Secrets section
-5. Deploy!
-
-### 2. Heroku
-```bash
-# Install Heroku CLI and login
-heroku login
-
-# Create new app
-heroku create your-app-name
-
-# Set environment variables
-heroku config:set GEMINI_API_KEY=your_api_key
-
-# Deploy
-git push heroku main
-```
-
-### 3. Docker
-```bash
-# Build the image
-docker build -t academic-research-assistant .
-
-# Run with environment variables
-docker run -p 8502:8502 -e GEMINI_API_KEY=your_api_key academic-research-assistant
-
-# Or use docker-compose
-docker-compose up
-```
-
-### 4. Railway
-1. Connect your GitHub repository to [Railway](https://railway.app)
-2. Add `GEMINI_API_KEY` environment variable
-3. Deploy automatically
-
-### 5. Render
-1. Connect your repository to [Render](https://render.com)
-2. Choose "Web Service"
-3. Set build command: `pip install -r requirements.txt`
-4. Set start command: `streamlit run main.py --server.port=$PORT --server.address=0.0.0.0`
-5. Add environment variable `GEMINI_API_KEY`
-
-## ⚙️ Configuration
-
-### Environment Variables
-- `GEMINI_API_KEY`: Your Google Gemini API key (required)
-- `GEMINI_MODEL`: Model to use (default: gemini-pro)
-- `PERFORMANCE_MODE`: fast/balanced/accurate (default: fast)
-- `MAX_PAPERS_DISPLAY`: Maximum papers to display (default: 20)
-
-### Performance Modes
-- **Fast** (~90MB): Quick loading, good performance
-- **Balanced** (~420MB): Better accuracy, moderate loading  
-- **Accurate** (~440MB): Best for academic content, slower loading
-
-## 📁 Project Structure
-```
-AcademicResearchAssistant/
-├── main.py                 # Main application
-├── config.py              # Configuration settings
-├── requirements.txt       # Python dependencies
-├── deploy.py             # Deployment script
-├── Dockerfile            # Docker configuration
-├── docker-compose.yml    # Docker Compose setup
-├── Procfile              # Heroku configuration
-├── .env.example          # Environment template
-├── features/             # Feature modules
-│   ├── references/       # Reference finder
-│   ├── writing/          # Writing assistant
-│   ├── summarizer/       # Paper summarizer
-│   ├── gap_finder/       # Research gap analyzer
-│   └── question/         # Q&A assistant
-└── utils/                # Utility functions
-```
-
-## 🔧 Development
-
-### Local Development
-```bash
-# Install in development mode
-pip install -e .
-
-# Run with hot reload
-streamlit run main.py --server.runOnSave=true
-```
-
-### Adding New Features
-1. Create a new module in `features/`
-2. Add the feature to the navigation in `main.py`
-3. Update configuration if needed
-
-## 🔒 Security
-
-- Never commit API keys to version control
-- Use environment variables for sensitive data
-- Consider rate limiting for production deployments
-- Monitor API usage and costs
-
-## 🐛 Troubleshooting
-
-### Common Deployment Issues
-1. **PyTorch Version Error**: Use `requirements-minimal.txt` for faster deployment
-2. **Python Version Conflicts**: Try `requirements-streamlit.txt` for Streamlit Cloud
-3. **Installation Timeout**: Use minimal requirements first, add features gradually
-4. **API Key Error**: Ensure your Gemini API key is valid and set correctly
-
-### Quick Fixes
-```bash
-# For deployment issues, try minimal requirements:
-cp requirements-minimal.txt requirements.txt
-
-# For Streamlit Cloud specifically:
-cp requirements-streamlit.txt requirements.txt
-```
-
-### Getting Help
-- Check `DEPLOYMENT_TROUBLESHOOTING.md` for detailed solutions
-- Review application logs for specific error messages
-- Test locally with the same Python version as deployment platform
-- Use minimal requirements for emergency deployment
-
-## 📊 System Requirements
-
-### Minimum
-- Python 3.7+
-- 2GB RAM
-- 1GB storage
-
-### Recommended
-- Python 3.9+
-- 4GB RAM
-- 2GB storage
-- Good internet connection
+*   **Docker**: `docker-compose up --build`
+*   **Streamlit Cloud**: Connect your GitHub repo and add `GEMINI_API_KEY` to secrets.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## 📞 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Check the troubleshooting section
-- Review the deployment documentation
+---
+*Developed as part of the Semester 6 Applicative Project | 2024-2025*

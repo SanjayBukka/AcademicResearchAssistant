@@ -5,6 +5,7 @@ from features.references.reference_finder import run_references
 from features.writing.writing_assistant import run_writing
 from features.summarizer.paper_summarizer import run_summarization_tool
 from features.gap_finder.gap_finder import run_gap_finder
+from enhanced_ui import apply_enhanced_styling
 
 # Try to import Q&A assistant with fallback
 try:
@@ -34,6 +35,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Apply Enhanced Styling
+apply_enhanced_styling()
 
 # Enhanced Custom CSS for modern styling
 st.markdown("""
@@ -255,9 +259,9 @@ nav_items = [
     {"key": "home", "icon": "🏠", "title": "Home", "desc": "Dashboard"},
     {"key": "references", "icon": "🔍", "title": "Find References", "desc": "Discover papers"},
     {"key": "writing", "icon": "✍️", "title": "Writing Guide", "desc": "AI assistance"},
-    {"key": "summarizer", "icon": "�", "title": "Summarizer", "desc": "Paper summaries"},
+    {"key": "summarizer", "icon": "📄", "title": "Summarizer", "desc": "Paper summaries"},
+    {"key": "gap_finder", "icon": "🕳️", "title": "Gap Finder", "desc": "Identify research gaps"},
     {"key": "trend_spotter", "icon": "💬", "title": "Q&A Assistant", "desc": "Ask questions"}
-    # Note: Gap Finder temporarily disabled for deployment stability
 ]
 
 for item in nav_items:
@@ -268,10 +272,10 @@ for item in nav_items:
 st.sidebar.markdown("---")
 st.sidebar.markdown("""
 <div class="team-info">
-    <h4 style="margin-bottom: 1rem; color: #ecf0f1;">� Quick Stats</h4>
+    <h4 style="margin-bottom: 1rem; color: #ecf0f1;">📊 Quick Stats</h4>
     <p style="margin-bottom: 0.5rem;">📄 Papers Analyzed: 10,000+</p>
-    <p style="margin-bottom: 0.5rem;">� Research Areas: 50+</p>
-    <p style="margin-bottom: 1rem;">� Active Users: 500+</p>
+    <p style="margin-bottom: 0.5rem;">🔬 Research Areas: 50+</p>
+    <p style="margin-bottom: 1rem;">👥 Active Users: 500+</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -361,7 +365,7 @@ if st.session_state.current_feature == "home":
         st.markdown("""
         <div class="feature-card" style="height: 280px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-                <div class="feature-icon">�️</div>
+                <div class="feature-icon">🕳️</div>
                 <div class="feature-title">Research Gap Analyzer</div>
                 <div class="feature-description">
                     Identify unexplored research opportunities using SciBERT embeddings
@@ -375,7 +379,7 @@ if st.session_state.current_feature == "home":
         st.markdown("""
         <div class="feature-card" style="height: 280px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-                <div class="feature-icon">�</div>
+                <div class="feature-icon">💬</div>
                 <div class="feature-title">Q&A Assistant</div>
                 <div class="feature-description">
                     Upload papers and ask questions. Get contextual answers
@@ -427,14 +431,7 @@ elif st.session_state.current_feature == "gap_finder":
     st.markdown('<div class="feature-description">', unsafe_allow_html=True)
     st.markdown("Discover unexplored areas in your field of research. This tool analyzes existing literature to identify potential research gaps that could be addressed in your work, helping you find novel research directions.")
     st.markdown("</div>", unsafe_allow_html=True)
-
-    # Deployment-safe feature check
-    try:
-        run_gap_finder()
-    except ImportError as e:
-        st.error("❌ This feature requires additional dependencies not available in the current deployment.")
-        st.info("💡 Use the Writing Assistant or Reference Finder for research help!")
-        st.code(f"Missing: {str(e)}")
+    run_gap_finder()
 
 elif st.session_state.current_feature == "trend_spotter":
     st.markdown('<div class="main-header">Q&A Assistant</div>', unsafe_allow_html=True)
@@ -454,20 +451,20 @@ elif st.session_state.current_feature == "trend_spotter":
         st.code("langchain\nlangchain-community\nsentence-transformers")
         st.markdown("**Alternative:** You can still use the Writing Assistant for help with your research questions!")
 
-# # Enhanced Footer
-# st.markdown("""
-# <div class="footer">
-#     <h3 style="margin-bottom: 1rem;">🎓 Academic Research Assistant</h3>
-#     <p style="margin-bottom: 1rem;">Empowering researchers with AI-powered tools for academic excellence</p>
-#     <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem;">
-#         <div>👨‍🏫 <strong>Mentor:</strong> Dr. Ajin R Nair</div>
-#         <div>👥 <strong>Team:</strong> Sharan • Vatsav • Gayathri • Sanjay</div>
-#     </div>
-#     <p style="font-size: 0.9rem; opacity: 0.8;">Semester 6 Applicative Project | 2024-2025</p>
-#     <div style="margin-top: 1rem;">
-#         <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; margin: 0 0.5rem;">🚀 Fast Mode</span>
-#         <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; margin: 0 0.5rem;">🤖 AI Powered</span>
-#         <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; margin: 0 0.5rem;">📚 Research Ready</span>
-#     </div>
-# </div>
-# """, unsafe_allow_html=True)
+# Enhanced Footer
+st.markdown(f"""
+<div class="footer">
+    <h3 style="margin-bottom: 1rem;">🎓 Academic Research Assistant</h3>
+    <p style="margin-bottom: 1rem;">Empowering researchers with AI-powered tools for academic excellence</p>
+    <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem;">
+        <div>👨‍🏫 <strong>Mentor:</strong> Dr. Ajin R Nair</div>
+        <div>👥 <strong>Team:</strong> Sharan • Vatsav • Gayathri • Sanjay</div>
+    </div>
+    <p style="font-size: 0.9rem; opacity: 0.8;">Semester 6 Applicative Project | 2024-2025</p>
+    <div style="margin-top: 1rem;">
+        <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; margin: 0 0.5rem;">🚀 Fast Mode</span>
+        <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; margin: 0 0.5rem;">🤖 AI Powered</span>
+        <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; margin: 0 0.5rem;">📚 Research Ready</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
